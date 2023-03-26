@@ -5,6 +5,10 @@ import openpyxl as pxl
 import os
 import pickle
 import datetime
+from pyvis import network as vis_net
+import networkx as nx
+
+tab_colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'white']
 
 
 def inputMode():
@@ -75,28 +79,21 @@ if __name__ ==  "__main__":
         elif str.lower().startswith("e") :
             fileMode()
     print("开始构建......")
-    options = {
-        "font_size": 36,
-        "node_size": 3000,
-        "node_color": "white",
-        "edgecolors": "black",
-        "linewidths": 5,
-        "width": 5,
-    }
-    for layer, nodes in enumerate(nx.topological_generations(G)):
-        # `multipartite_layout` expects the layer as a node attribute, so add the
-        # numeric layer value as a node attribute
-        for node in nodes:
-            G.nodes[node]["layer"] = layer
-    # Compute the multipartite_layout using the "layer" node attribute
-    pos = nx.multipartite_layout(G, subset_key="layer")
-
-    fig, ax = plt.subplots()
-    nx.draw_networkx(G, pos=pos, ax=ax, **options)
-    ax.set_title("DAG layout in topological order")
-    fig.tight_layout()
-    plt.show()
+    colors_of_node = nx.coloring.greedy_color(G)
+    print(colors_of_node)
+    print(list(G.nodes(data='color', default=None)))
+    for node in list(G.nodes) :
+        # G.nodes[node]['color'] = colors_of_node[node]
+        G.nodes[node]['color'] = tab_colors[colors_of_node[node]%len(tab_colors)]
+        print(G.nodes[node]['color'])
+    print(list(G.nodes(data='color', default=None)))
+    nt = vis_net.Network("500px", "1500px", directed=True)
+    nt.from_nx(G)
+    nt.show_buttons(filter_=['physics'])
+    # TO DO -- check if the file is exited
+    nt.show("nx.html", notebook=False)
     print("构建完成......")
+    exit(0)
     saveFile = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     with open(saveFile, "wb") as f :
         pickle.dump(graph, f)
